@@ -10,22 +10,15 @@ const actionRoutes = require('./routes/actions');
 const userRoutes = require('./routes/users');
 
 const app = express();
-const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: '*',
-    methods: ['GET', 'POST']
-  }
-});
-
-app.use(cors());
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  credentials: true,
+};
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // MongoDB connection
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(() => {
+mongoose.connect(process.env.MONGO_URI).then(() => {
   console.log('MongoDB connected');
 }).catch((err) => {
   console.error('MongoDB connection error:', err);
@@ -37,6 +30,14 @@ app.get('/', (req, res) => {
 });
 
 // Socket.IO connection
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    methods: ['GET', 'POST']
+  }
+});
+
 io.on('connection', (socket) => {
   console.log('A user connected:', socket.id);
   socket.on('disconnect', () => {
